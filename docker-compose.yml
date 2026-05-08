@@ -1,0 +1,15 @@
+services:
+  bot:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./pending:/app/pending
+    healthcheck:
+      test: ["CMD", "python", "-c", "import aiosqlite, asyncio; asyncio.run(aiosqlite.connect('/app/data/bot.db').__aenter__())"]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
