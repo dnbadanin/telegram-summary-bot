@@ -29,8 +29,9 @@ docker compose version
 ### 3. Клонирование репозитория
 
 ```bash
-git clone https://github.com/dnbadanin/telegram-summary-bot.git
-cd telegram-summary-bot
+sudo git clone https://github.com/dnbadanin/telegram-summary-bot.git /opt/telegram-summary-bot
+sudo chown -R $USER:$USER /opt/telegram-summary-bot
+cd /opt/telegram-summary-bot
 ```
 
 ### 4. Настройка окружения
