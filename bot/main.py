@@ -2,7 +2,7 @@ import logging
 import logging.handlers
 from pathlib import Path
 
-from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, CallbackQueryHandler, filters
+from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, CallbackQueryHandler, ChatMemberHandler, filters
 
 from bot.config import TELEGRAM_BOT_TOKEN, LOG_LEVEL, LOG_PATH
 from bot.services.database import init_db
@@ -18,6 +18,7 @@ from bot.handlers.commands import (
     callback_subscription,
 )
 from bot.handlers.admin import cmd_enable_summary, cmd_disable_summary, cmd_status
+from bot.handlers.membership import handle_my_chat_member
 
 
 def _setup_logging() -> None:
@@ -76,6 +77,9 @@ def main() -> None:
     app.add_handler(CommandHandler("enable_summary", cmd_enable_summary, filters=group))
     app.add_handler(CommandHandler("disable_summary", cmd_disable_summary, filters=group))
     app.add_handler(CommandHandler("status", cmd_status, filters=group))
+
+    # Track bot being added/removed from groups
+    app.add_handler(ChatMemberHandler(handle_my_chat_member, ChatMemberHandler.MY_CHAT_MEMBER))
 
     # Inline keyboard callbacks for subscribe/unsubscribe
     app.add_handler(CallbackQueryHandler(callback_subscription, pattern=r"^(sub|unsub):"))

@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS chats (
     chat_title TEXT,
     chat_type TEXT,
     in_group_post BOOLEAN DEFAULT 0,
+    active BOOLEAN DEFAULT 1,
     added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -67,7 +68,13 @@ CREATE TABLE IF NOT EXISTS upload_queue (
 async def init_db() -> None:
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.executescript(_CREATE_SQL)
-        await db.commit()
+        # Migration: add active column if it doesn't exist yet
+        try:
+            await db.execute("ALTER TABLE chats ADD COLUMN active BOOLEAN DEFAULT 1")
+            await db.commit()
+            logger.info("Migrated chats table: added active column")
+        except Exception:
+            pass  # column already exists
     logger.info("Database initialised at %s", DATABASE_PATH)
 
 
@@ -75,9 +82,9 @@ async def upsert_chat(chat_id: int, title: str, chat_type: str) -> None:
     async with aiosqlite.connect(DATABASE_PATH) as db:
         await db.execute(
             """
-            INSERT INTO chats (chat_id, chat_title, chat_type)
-            VALUES (?, ?, ?)
-            ON CONFLICT(chat_id) DO UPDATE SET chat_title=excluded.chat_title
+            INSERT INTO chats (chat_id, chat_title, chat_type, active)
+            VALUES (?, ?, ?, 1)
+            ON CONFLICT(chat_id) DO UPDATE SET chat_title=excluded.chat_title, active=1
             """,
             (chat_id, title, chat_type),
         )
@@ -87,9 +94,19 @@ async def upsert_chat(chat_id: int, title: str, chat_type: str) -> None:
 async def get_all_chats() -> list[dict[str, Any]]:
     async with aiosqlite.connect(DATABASE_PATH) as db:
         db.row_factory = aiosqlite.Row
-        async with db.execute("SELECT * FROM chats") as cursor:
+        async with db.execute("SELECT * FROM chats WHERE active = 1") as cursor:
             rows = await cursor.fetchall()
     return [dict(r) for r in rows]
+
+
+async def set_chat_active(chat_id: int, active: bool) -> None:
+    async with aiosqlite.connect(DATABASE_PATH) as db:
+        await db.execute(
+            "UPDATE chats SET active = ? WHERE chat_id = ?",
+            (int(active), chat_id),
+        )
+        await db.commit()
+    logger.info("Chat %s active=%s", chat_id, active)
 
 
 async def get_chat(chat_id: int) -> dict[str, Any] | None:
