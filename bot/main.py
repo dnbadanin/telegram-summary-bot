@@ -2,7 +2,7 @@ import logging
 import logging.handlers
 from pathlib import Path
 
-from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, filters
+from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, CallbackQueryHandler, filters
 
 from bot.config import TELEGRAM_BOT_TOKEN, LOG_LEVEL, LOG_PATH
 from bot.services.database import init_db
@@ -15,6 +15,7 @@ from bot.handlers.commands import (
     cmd_unsubscribe,
     cmd_list,
     cmd_chats,
+    callback_subscription,
 )
 from bot.handlers.admin import cmd_enable_summary, cmd_disable_summary, cmd_status
 
@@ -75,6 +76,9 @@ def main() -> None:
     app.add_handler(CommandHandler("enable_summary", cmd_enable_summary, filters=group))
     app.add_handler(CommandHandler("disable_summary", cmd_disable_summary, filters=group))
     app.add_handler(CommandHandler("status", cmd_status, filters=group))
+
+    # Inline keyboard callbacks for subscribe/unsubscribe
+    app.add_handler(CallbackQueryHandler(callback_subscription, pattern=r"^(sub|unsub):"))
 
     # Collect all group messages
     app.add_handler(
