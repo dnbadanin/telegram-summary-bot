@@ -152,28 +152,22 @@ async def callback_subscription(update: Update, context: ContextTypes.DEFAULT_TY
         await query.edit_message_text(f"✅ Подписка на «{title}» отменена.")
 
 
+async def _reply(target, text: str) -> None:
+    """Send a text reply that works for both Message and CallbackQuery."""
+    if hasattr(target, "edit_message_text"):
+        await target.edit_message_text(text)
+    else:
+        await target.reply_text(text)
+
+
 async def _do_subscribe(context, reply_target, user_id: int, chat_id: int) -> None:
     chat = await get_chat(chat_id)
     if not chat:
-        await reply_target.reply_text(
-            "❌ Бот не состоит в этом чате или чат ещё не зарегистрирован."
-        )
-        return
-
-    try:
-        member = await context.bot.get_chat_member(chat_id, user_id)
-        if member.status in ("left", "kicked"):
-            await reply_target.reply_text("❌ Ты должен быть участником этого чата.")
-            return
-    except Exception as exc:
-        logger.warning("Could not verify membership for user %s in chat %s: %s", user_id, chat_id, exc)
-        await reply_target.reply_text("⚠️ Не удалось проверить членство в чате. Попробуй позже.")
+        await _reply(reply_target, "❌ Бот не состоит в этом чате или чат ещё не зарегистрирован.")
         return
 
     await add_subscription(user_id, chat_id)
-
-    text = f"✅ Подписка оформлена! Ты будешь получать ежедневный дайджест чата «{chat['chat_title']}»."
-    if hasattr(reply_target, "edit_message_text"):
-        await reply_target.edit_message_text(text)
-    else:
-        await reply_target.reply_text(text)
+    await _reply(
+        reply_target,
+        f"✅ Подписка оформлена! Ты будешь получать ежедневный дайджест чата «{chat['chat_title']}».",
+    )
