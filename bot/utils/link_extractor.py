@@ -2,7 +2,6 @@ import re
 from urlextract import URLExtract
 
 _extractor = URLExtract()
-_extractor.set_extract_localhost(False)
 
 # Keep only http/https URLs
 _SCHEME_RE = re.compile(r"^https?://", re.IGNORECASE)
