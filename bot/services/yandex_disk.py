@@ -36,10 +36,10 @@ def _links_remote_path(chat_title: str, date_str: str) -> str:
 
 async def _ensure_path(client: httpx.AsyncClient, path: str) -> None:
     """Create all intermediate directories on Yandex Disk."""
-    parts = Path(path).parent.parts
+    parts = [p for p in Path(path).parent.parts if p != "/"]
     current = ""
     for part in parts:
-        current = f"{current}/{part}".lstrip("/")
+        current = f"{current}/{part}"
         resp = await client.put(_BASE_URL, params={"path": current}, headers=_HEADERS)
         if resp.status_code not in (201, 409):
             resp.raise_for_status()
