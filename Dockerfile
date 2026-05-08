@@ -6,6 +6,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY bot/ ./bot/
+COPY tests/ ./tests/
 
 RUN mkdir -p /app/data /app/logs /app/pending
 
